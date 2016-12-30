@@ -1,0 +1,31 @@
+<html>
+  <head>
+    <title>Tractor Racing</title>
+    <meta charset="utf-8">
+    <script src="babylon.js"></script>
+    <style>
+      html, body {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #canvas {
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script src="initScript.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', function(){
+            onLoad();
+        });
+    </script>
+  </body>
+</html>
