@@ -1,15 +1,23 @@
 /// <reference path="babylon.js" />
 /// <reference path="cannon.js" />
-
 function createScene(engine) {
 
 
     //create scene
     var scene = new BABYLON.Scene(engine);
-    scene.enablePhysics();
+
+    //Physics Enable
+    var gravityVector = new BABYLON.Vector3(0, -9.81, 0);
+    var physicsPlugin = new BABYLON.CannonJSPlugin();
+    scene.enablePhysics(gravityVector, physicsPlugin);
+
 
     //Create a Camera
     var camera1 = new BABYLON.ArcRotateCamera("Camera", 0, 1, 40, new BABYLON.Vector3(0, 2, 0), scene);
+    camera1.lowerBetaLimit = 0.6;
+    camera1.upperBetaLimit = 1.5;
+
+
     //Create Light
     var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
     light.intensity = 0.7;
@@ -27,9 +35,14 @@ function createScene(engine) {
      * Updatable if Dynamic
      * SuccessCallback, when finished called
      * */
-    var ground = BABYLON.Mesh.CreateGroundFromHeightMap("ground", "textures/terrain_02.png", 200, 200, 50, 0, 2, scene, false, function () {
-        ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpostor.HeightmapImpostor, {mass: 0})
+    var ground = BABYLON.Mesh.CreateGroundFromHeightMap("ground", "textures/terrain_02.png", 200, 200, 100, 0, 2, scene, false, function () {
+        ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpostor.HeightmapImpostor, {
+            mass: 0,
+            restitution: 0.9,
+            friction: 1
+        })
     });
+    ground.position.y = 0;
 
     var bumpMaterial = new BABYLON.StandardMaterial("texture1", scene);
     bumpMaterial.diffuseTexture = new BABYLON.Texture("textures/grass.jpg", scene);
@@ -40,12 +53,27 @@ function createScene(engine) {
     ground.receiveShadows = true;
 
 
+    //Todo Importi vsako gumo posebej in na tak način naredi fiziko
+    //Physics BOX
+    var box = BABYLON.Mesh.CreateBox("box", 7, scene);
+    box.scaling = new BABYLON.Vector3(1.5, 1, 1);
+    box.position = new BABYLON.Vector3(-0.5, 6.5, 0);
+    box.bakeCurrentTransformIntoVertices(); //Scaling fixed parent-child
+    box.visibility = 0.1;
+    box.setPhysicsState({impostor: BABYLON.PhysicsEngine.BoxImpostor, restitution: 0.2, mass: 1, friction: 1});
+    box.showBoundingBox = true;
+    box.updatePhysicsBodyPosition();
+    // box.moveWithCollisions(new BABYLON.Vector3(5, 0, 0));
+    box.refreshBoundingInfo();
+
     //Tractor
+    var tractor;
     BABYLON.SceneLoader.ImportMesh("", "blender/", "tractor_scene.babylon", scene, function (newMeshes) {
-        // Set the target of the camera to the first imported mesh
-        console.log(newMeshes[0]);
-        setupPhysiscs(newMeshes[0]);
+        tractor = new Tractor(newMeshes[0]);
+        tractor.setY(2.8);
+        tractor.mesh.parent = box;
     });
+    //Todo Importi vsako gumo posebej in na tak način naredi fiziko
 
 
     /*
@@ -102,8 +130,23 @@ function createScene(engine) {
     return scene;
 };
 
-function setupPhysiscs(mesh) {
-    mesh.position.y = 1;
+
+var Tractor = function (mesh) {
+    this.mesh = mesh;
+
+    this.setX = function (x) {
+        this.mesh.position.x = x;
+    }
+    this.setY = function (y) {
+        this.mesh.position.y = y;
+    }
+    this.setZ = function (z) {
+        this.mesh.position.z = z;
+    }
+    this.setupPhysiscs = function (mesh) {
+        console.log(mesh);
+    }
+
 }
 
 
