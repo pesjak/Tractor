@@ -1,0 +1,270 @@
+<html>
+  <head>
+    <title>Tractor Racing</title>
+    <meta charset="utf-8">
+    <script src="tr.js" type="text/javascript"></script>
+    <script src="babylon.js"></script>
+  </head>
+  <body onload="init()">
+    <canvas id="canvas"></canvas>
+  </body>
+  <style>
+    canvas {
+      width: 100%;
+      height: 98%;
+    }
+  </style>
+  <script>
+
+  var canvas = document.getElementById('canvas')
+  var engine = new BABYLON.Engine(canvas, true)
+
+  var createScene = function () {
+    var scene = new BABYLON.Scene(engine)
+    //  scene.clearColor = new BABYLON.Color3(0, 1, 0)
+    // new BABYLON.OimoJSPlugin()
+    // new BABYLON.CannonJSPlugin()
+    scene.enablePhysics(new BABYLON.Vector3(0,-9.81, 0), new BABYLON.CannonJSPlugin())
+
+    // var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(0, 10, -20), scene)
+    // camera.setTarget(BABYLON.Vector3.Zero())
+    // camera.attachControl(canvas, false)
+
+
+    // LIGHT
+
+    // var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene)
+    // light.intensity = 0.5
+
+    var light = new BABYLON.DirectionalLight("dir01", new BABYLON.Vector3(-1, -2, -1), scene)
+
+
+    // GROUND
+
+    // var ground = new BABYLON.Mesh.CreateGround("ground", 20, 20, 2, scene)
+    // ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0 }, scene)
+
+    var ground = BABYLON.Mesh.CreateGroundFromHeightMap("ground", "textures/terrain_02.png", 100, 100, 200, 0, 10, scene, false, function (){
+      // var ground2 = ground.clone()
+			// ground2.material = new BABYLON.StandardMaterial("wire", scene)
+			// ground2.material.diffuseColor = BABYLON.Color3.Black()
+			// ground2.material.wireframe = true
+
+      // ground.setPhysicsState(BABYLON.PhysicsEngine.HeightmapImpostor, { mass: 0 })
+      ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpostor.HeightmapImpostor, { mass: 0 })
+    })
+
+    var bumpMaterial = new BABYLON.StandardMaterial("texture1", scene)
+    bumpMaterial.diffuseTexture = new BABYLON.Texture("textures/grass.jpg", scene)
+    bumpMaterial.diffuseTexture.uScale = 10.0
+    bumpMaterial.diffuseTexture.vScale = 10.0
+    // bumpMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0)
+    bumpMaterial.specularColor = new BABYLON.Color3(0, 0, 0)
+    // bumpMaterial.diffuseColor = new BABYLON.Color3(0, 1, 0)
+    // bumpMaterial.bumpTexture = new BABYLON.Texture("textures/bump_grass.jpg", scene)
+    // bumpMaterial.bumpTexture.uScale = 10.0
+    // bumpMaterial.bumpTexture.vScale = 10.0
+
+    ground.material = bumpMaterial
+    ground.receiveShadows = true
+
+
+    // SKYBOX
+
+    var skybox = BABYLON.Mesh.CreateBox("skyBox", 300.0, scene)
+    var skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene)
+    skyboxMaterial.backFaceCulling = false
+    skyboxMaterial.disableLighting = true
+    skybox.material = skyboxMaterial
+    skybox.infiniteDistance = true
+    skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0)
+    skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0)
+    skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("textures/skybox/skybox", scene)
+    skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE
+
+
+    // TRACTOR
+
+    var r = 1
+
+    box = BABYLON.Mesh.CreateBox("box1", r / 1.5, scene)
+    box.position.y = 10
+
+    sphere = BABYLON.MeshBuilder.CreateSphere("sphere", { diameterX: r / 4, diameterY: r / 2, diameterZ: r / 2, segments: 4 }, scene)
+    sphere2 = BABYLON.MeshBuilder.CreateSphere("sphere", { diameterX: r / 4, diameterY: r / 2, diameterZ: r / 2, segments: 4 }, scene)
+    sphere3 = BABYLON.MeshBuilder.CreateSphere("sphere", { diameterX: r / 2, diameterY: r, diameterZ: r, segments: 4 }, scene)
+    sphere4 = BABYLON.MeshBuilder.CreateSphere("sphere", { diameterX: r / 2, diameterY: r, diameterZ: r, segments: 4 }, scene)
+    wheels = [sphere, sphere2, sphere3, sphere4]
+
+
+    // HAYSTACKS
+
+    hayMat = new BABYLON.StandardMaterial("hay", scene)
+    hayMat.diffuseTexture = new BABYLON.Texture("textures/haystack.png", scene)
+
+    // hay1 = BABYLON.MeshBuilder.CreateBox("hay1", { width: 2, height: 1, depth: 1 }, scene)
+    // var hay2 = BABYLON.MeshBuilder.CreateBox("hay2", { width: 2, height: 1, depth: 1 }, scene)
+    // var hay3 = BABYLON.MeshBuilder.CreateBox("hay3", { width: 2, height: 1, depth: 1 }, scene)
+    // hays = [hay1, hay2, hay3]
+
+    hays = []
+    for (var i = 0; i < 3; i++) {
+      hays[i] = BABYLON.MeshBuilder.CreateBox("hay" + i, { width: 2, height: 1, depth: 1 }, scene)
+    }
+
+
+    // PHYSICS
+
+    box.physicsImpostor = new BABYLON.PhysicsImpostor(box, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 2, restitution: 0.3 }, scene)
+
+    wheels.forEach(function(e) {
+      e.physicsImpostor = new BABYLON.PhysicsImpostor(e, BABYLON.PhysicsImpostor.SphereImpostor, { mass: 0.2 }, scene)
+    })
+
+    hays.forEach(function(e) {
+      e.material = hayMat
+      e.position.x = Math.floor((Math.random() * 80) + 40) - 80
+      e.position.z = Math.floor((Math.random() * 80) + 40) - 80
+      e.position.y = 10
+      e.physicsImpostor = new BABYLON.PhysicsImpostor(e, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0.1 }, scene)
+    })
+
+
+    // WHEEL JOINTS
+
+    joint = new BABYLON.HingeJoint({
+      mainPivot: new BABYLON.Vector3(r, -r / 1.5, r),
+      mainAxis: new BABYLON.Vector3(-1, 0, 0)
+    })
+
+    joint2 = new BABYLON.HingeJoint({
+      mainPivot: new BABYLON.Vector3(-r, -r / 1.5, r),
+      mainAxis: new BABYLON.Vector3(-1, 0, 0)
+    })
+
+    joint3 = new BABYLON.HingeJoint({
+      mainPivot: new BABYLON.Vector3(r, -r / 2, -r * 0.7),
+      mainAxis: new BABYLON.Vector3(-1, 0, 0)
+    })
+
+    joint4 = new BABYLON.HingeJoint({
+      mainPivot: new BABYLON.Vector3(-r, -r / 2, -r * 0.7),
+      mainAxis: new BABYLON.Vector3(-1, 0, 0)
+    })
+
+    box.physicsImpostor.addJoint(sphere.physicsImpostor, joint)
+    box.physicsImpostor.addJoint(sphere2.physicsImpostor, joint2)
+    box.physicsImpostor.addJoint(sphere3.physicsImpostor, joint3)
+    box.physicsImpostor.addJoint(sphere4.physicsImpostor, joint4)
+
+
+    // SHADOWS
+
+    var shadowGenerator = new BABYLON.ShadowGenerator(1024, light)
+    // shadowGenerator.useVarianceShadowMap = true
+    shadowGenerator.useBlurVarianceShadowMap = true
+    shadowGenerator.bias = 0.01
+    shadowGenerator.getShadowMap().renderList.push(box)
+    shadowGenerator.getShadowMap().renderList.push(sphere)
+    shadowGenerator.getShadowMap().renderList.push(sphere2)
+    shadowGenerator.getShadowMap().renderList.push(sphere3)
+    shadowGenerator.getShadowMap().renderList.push(sphere4)
+
+
+    // CAMERA
+
+    var camera = new BABYLON.FollowCamera("FollowCam", new BABYLON.Vector3(0, 10, -20), scene)
+    camera.lockedTarget = box
+    camera.radius = 10
+    camera.heightOffset = 3
+    camera.rotationOffset = 180
+    camera.cameraAcceleration = 0.02
+    camera.maxCameraSpeed = 3
+    scene.activeCamera = camera
+
+
+    // COLLISIONS
+
+    scene.registerBeforeRender(function() {
+      for (var i = 0; i < hays.length; i++) {
+        if (hays[i].intersectsMesh(box, false)) {
+          hays[i].dispose()
+          hays.splice(i, 1)
+        }
+      }
+    })
+
+
+    // IMPORT
+
+    BABYLON.SceneLoader.ImportMesh("", "blender/", "tractor.babylon", scene, function (newMeshes) {
+        tract = newMeshes[1]
+        tr.position.z = 20
+        tr.position.y = 10
+    })
+
+
+    return scene
+  }
+
+  var scene = createScene()
+
+  engine.runRenderLoop(function () {
+     scene.render()
+  })
+
+  window.addEventListener("resize", function () {
+     engine.resize()
+  })
+
+  dir = true
+
+  function keyUp(event){
+    var k = event.keyCode
+
+    switch (k) {
+      case 87:
+      case 83:
+        dir = true
+        joint3.setMotor(0, 6)
+        joint4.setMotor(0, 6)
+        break
+      case 65:
+      case 68:
+        break
+    }
+  }
+
+  function keyDown(event){
+    var k = event.keyCode
+    if (dir) {
+      var angle = Math.PI / 6
+    } else {
+      var angle = -Math.PI / 6
+    }
+
+    switch (k) {
+      case 87:
+        dir = true
+        joint3.setMotor(-5, 6)
+        joint4.setMotor(-5, 6)
+        break
+      case 83:
+        dir = false
+        joint3.setMotor(3, 6)
+        joint4.setMotor(3, 6)
+        break
+      case 65:
+        box.rotation.y = -angle
+        break
+      case 68:
+        box.rotation.y = angle
+        break
+    }
+  }
+
+  document.addEventListener('keyup', keyUp)
+  document.addEventListener('keydown', keyDown)
+
+  </script>
+</html>

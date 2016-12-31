@@ -41,6 +41,12 @@ function createScene(engine) {
 
 
     //Tractor
+    BABYLON.SceneLoader.ImportMesh("", "blender/", "tractor_scene.babylon", scene, function (newMeshes) {
+        // Set the target of the camera to the first imported mesh
+        console.log(newMeshes[0]);
+        setupPhysiscs(newMeshes[0]);
+    });
+
 
     /*
      //wheel radius
@@ -96,6 +102,11 @@ function createScene(engine) {
     return scene;
 };
 
+function setupPhysiscs(mesh) {
+    mesh.position.y = 1;
+}
+
+
 onLoad = function () {
 
     // Check support
@@ -111,17 +122,6 @@ onLoad = function () {
         //Create a scene
         var scene = createScene(engine);
         scene.activeCamera.attachControl(canvas);
-
-
-        BABYLON.SceneLoader.ImportMesh("", "blender/", "tractor_scene.babylon", scene, function (newMeshes) {
-            // Set the target of the camera to the first imported mesh
-            console.log(newMeshes[0]);
-            setup(newMeshes[0]);
-        });
-
-        function setup(mesh) {
-            mesh.position.y = 1;
-        }
 
 
         /*  BABYLON.SceneLoader.Load("", "blender/tractor_scene.babylon", engine, function (newScene) {
